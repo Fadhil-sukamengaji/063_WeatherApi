@@ -1,38 +1,186 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Geolocation App</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: #f1f5f9;
+            color: #1e293b;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 420px;
+            padding: 28px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+        }
+
+        .header {
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 12px;
+        }
+
+        .header h3 {
+            font-size: 1rem;
+            color: #475569;
+            font-weight: 600;
+        }
+
+        .search-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            border-color: #2563eb;
+        }
+
+        button {
+            padding: 10px 18px;
+            background-color: #2563eb;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #1d4ed8;
+        }
+
+        #status {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 16px;
+            min-height: 1.2em;
+        }
+
+        .info-card {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+
+        .info-row .label {
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .info-row .value {
+            font-weight: 600;
+            color: #0f172a;
+        }
+    </style>
 </head>
 <body>
-    <h1>Nama : Fadhil Mudzaki</h1>
-    <h1>Nim : 20240140063</h1>
 
-    <p>
-        Kota :
-        <span id="lokasi"></span>
-    </p>
+    <div class="card">
+        <div class="header">
+            <h3>Nama : Fadhil Mudzaki Hartono Putra</h3>
+            <h3>NIM : 20240140063</h3>
+        </div>
 
-    <hr>
-    <p>
-        Kordinat :
-        <span id="negara"></span>
-    </p>
+        <div class="search-group">
+            <input type="text" id="lokasi" value="Bandung City" placeholder="Cari kota / kecamatan">
+            <button id="btnCari">Cari</button>
+        </div>
+
+        <p id="status"></p>
+
+        <div class="info-card">
+            <div class="info-row"><span class="label">Negara</span> <span id="negara" class="value">-</span></div>
+            <div class="info-row"><span class="label">Provinsi</span> <span id="provinsi" class="value">-</span></div>
+            <div class="info-row"><span class="label">Kecamatan</span> <span id="kecamatan" class="value">-</span></div>
+            <div class="info-row"><span class="label">Longitude</span> <span id="longitude" class="value">-</span></div>
+            <div class="info-row"><span class="label">Latitude</span> <span id="latitude" class="value">-</span></div>
+        </div>
+    </div>
 
     <script>
-        fetch("/api/lokasi")
-            .then(response => response.json())
-            .then(data => {
+        const inputLokasi = document.getElementById('lokasi');
+        const status = document.getElementById('status');
 
-                console.log(data);
+        function isi(id, nilai) {
+            document.getElementById(id).textContent = nilai ?? '-';
+        }
 
-                document.getElementById("lokasi").innerHTML = data.kota;
-                document.getElementById("negara").innerHTML = data.koordinat;
-            })
-            .catch(error => {
-                console.error(error);
-            });
+        async function cariLokasi() {
+            const kota = inputLokasi.value.trim();
+            if (!kota) {
+                status.textContent = 'Masukkan nama lokasi dulu.';
+                return;
+            }
+
+            status.textContent = 'Mencari...';
+
+            try {
+                const response = await fetch('/api/lokasi?kota=' + encodeURIComponent(kota));
+                const data = await response.json();
+
+                if (!response.ok) {
+                    status.textContent = data.message || 'Terjadi kesalahan.';
+                    return;
+                }
+
+                status.textContent = '';
+                isi('negara', data.negara);
+                isi('provinsi', data.provinsi);
+                isi('kecamatan', data.kecamatan);
+                isi('longitude', data.longitude);
+                isi('latitude', data.latitude);
+            } catch (error) {
+                console.error('Error:', error);
+                status.textContent = 'Gagal terhubung ke server.';
+            }
+        }
+
+        document.getElementById('btnCari').addEventListener('click', cariLokasi);
+
+        inputLokasi.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') cariLokasi();
+        });
+
+        cariLokasi();
     </script>
 </body>
 </html>
